@@ -1,3 +1,5 @@
+const W = 720, H = 1280;
+
 // =========================
 // 1) CONTROLE DE ÁUDIO
 // =========================
@@ -87,13 +89,22 @@ function ensureAnalyser() {
 // A variável level funciona como um valor suavizado da intensidade do som,
 // permitindo que o círculo cresça e diminua de forma mais natural e menos brusca.
 let level = 0;
+let sky;
+const SKY_TOP = [160, 190, 255];
+const SKY_BOTTOM = [255, 212, 236];
 
 function setup() {
-  createCanvas(360, 640);
+  pixelDensity(1);
+  createCanvas(W, H);
+  noiseDetail(3, 0.5);
+  sky = createGraphics(72, 128);
+  sky.pixelDensity(1);
 }
 
 function draw() {
-  background(170, 190, 255);
+  const t = millis() / 1000;
+  paintSky(t);
+  image(sky, 0, 0, W, H);
 
   // Calcula a intensidade do grave e eleva esse valor para dar mais contraste.
   const bass = Math.pow(getBass(), 2.6);
@@ -103,6 +114,26 @@ function draw() {
 
   // O círculo cresce conforme a energia do baixo aumenta.
   circle(width / 2, height / 2, 80 + level * 300);
+}
+
+function paintSky(t) {
+  sky.loadPixels();
+  for (let y = 0; y < sky.height; y++) {
+    const k = y / (sky.height - 1);
+    const r0 = lerp(SKY_TOP[0], SKY_BOTTOM[0], k);
+    const g0 = lerp(SKY_TOP[1], SKY_BOTTOM[1], k);
+    const b0 = lerp(SKY_TOP[2], SKY_BOTTOM[2], k);
+    for (let x = 0; x < sky.width; x++) {
+      const n = noise(x * 0.045, y * 0.03, t * 0.12);
+      const cloud = constrain((n - 0.42) * 2.4, 0, 1);
+      const i = (y * sky.width + x) * 4;
+      sky.pixels[i]     = lerp(r0, 255, cloud);
+      sky.pixels[i + 1] = lerp(g0, 255, cloud);
+      sky.pixels[i + 2] = lerp(b0, 255, cloud);
+      sky.pixels[i + 3] = 255;
+    }
+  }
+  sky.updatePixels();
 }
 
 // Retorna um valor entre 0 e 1 representando a energia do grave da música.
