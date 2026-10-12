@@ -14,9 +14,24 @@
 <script src="scenes/dreamy/sparkle.js" defer></script>
 <script src="scenes/dreamy/scene.js" defer></script>
 <script src="js/sketch.js" defer></script>
+<script src="js/recorder.js" defer></script>
 </head>
 <body>
   <input id="audioFile" type="file" accept="audio/*">
   <button id="btnPlay" disabled>Tocar</button>
+  <label>Começar em (s)
+  <input id="startAt" type="number" min="0" value="0">
+</label>
+<label>Duração
+  <select id="dur">
+    <option value="15">15 s</option>
+    <option value="30" selected>30 s</option>
+    <option value="60">60 s</option>
+    <option value="full">Até o fim da música</option>
+  </select>
+</label>
+<button id="btnRec">Gravar vídeo</button>
+<a id="dl" hidden>Baixar vídeo</a>
+<p id="recStatus"></p>
 </body>
 </html>

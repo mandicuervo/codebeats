@@ -26,6 +26,13 @@ let analyser = null;
 // Índice baixo = grave, índice alto = agudo.
 let freqData = null;
 
+// Ponto de saída do som para a gravação. Criado junto com o analisador.
+let recDest = null;
+
+// Ganchos para outros arquivos reagirem ao áudio. onStop roda sempre que a
+// música para, seja pelo botão ou ao chegar ao fim.
+const audioEvents = { onStop: null };
+
 // ---------- Elementos da página ----------
 
 const fileInput = document.getElementById('audioFile');
@@ -52,26 +59,30 @@ fileInput.addEventListener('change', async () => {
 // Para a música. Zera o onended antes de parar, senão o evento de "terminou"
 // dispararia este mesmo código uma segunda vez.
 function stopMusic() {
-  if (!source) return;
-
-  source.onended = null;
-  source.stop();
-  source = null;
-  btnPlay.textContent = 'Tocar';
+  if (source) {
+    source.onended = null;
+    source.stop();
+    source.disconnect();
+    source = null;
+    btnPlay.textContent = 'Tocar';
+    if (audioEvents.onStop) audioEvents.onStop();   // só avisa se havia música tocando
+  }
 }
 
 // Toca o buffer. A cadeia de áudio fica: source -> analyser -> caixas de som.
 // O analisador no meio é o que permite medir o som sem alterá-lo.
-function startMusic() {
-  audioCtx.resume(); // desbloqueia o áudio (política de autoplay do navegador)
-  ensureAnalyser();
+function startMusic(offset = 0, duration) {
+  if (!audioBuffer) return;
+  stopMusic();                 // 1. limpa a música anterior (deixa source = null)
+  audioCtx.resume();           // 2. libera o áudio (política de autoplay)
+  ensureAnalyser();            // 3. garante analisador e recDest
 
-  source = audioCtx.createBufferSource();
+  source = audioCtx.createBufferSource();   // 4. CRIA a fonte
   source.buffer = audioBuffer;
-  source.connect(analyser);
-  source.onended = stopMusic; // quando a música termina sozinha
-  source.start();
+  source.connect(analyser);                 // 5. liga no analisador
+  source.onended = stopMusic;               // 6. fim natural também fecha tudo
 
+  source.start(0, offset, duration);        // 7. só agora toca
   btnPlay.textContent = 'Parar';
 }
 
@@ -88,6 +99,8 @@ function ensureAnalyser() {
   analyser = audioCtx.createAnalyser();
   analyser.fftSize = 1024;
   analyser.connect(audioCtx.destination);
+  recDest = audioCtx.createMediaStreamDestination();
+  analyser.connect(recDest);
 
   freqData = new Uint8Array(analyser.frequencyBinCount);
 }
