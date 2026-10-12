@@ -92,6 +92,28 @@ let level = 0;
 let sky;
 const SKY_TOP = [160, 190, 255];
 const SKY_BOTTOM = [255, 212, 236];
+const drops = [];
+skyImg = new ImageData(72, 128);
+
+const glints = Array.from({ length: 28 }, () => ({
+  flash: 0,
+  x: Math.random() * W,
+  y: Math.random() * H * 0.6,
+  r: 14 + Math.random() * 26,
+  speed: 0.6 + Math.random() * 1.4,
+  phase: Math.random() * Math.PI * 2,
+}));
+
+const BANDS = {
+  bass:   [40, 250],
+  mid:    [250, 2500],
+  treble: [2500, 10000],
+};
+
+const PITCH_RANGE = [300, 1200];
+const PITCH_SPREAD = 0.6;
+const STAR_RGB = '255, 226, 150';
+const DROP_RGB = '255, 140, 210';
 
 function setup() {
   pixelDensity(1);
@@ -101,60 +123,160 @@ function setup() {
   sky.pixelDensity(1);
 }
 
+function makeDetector(ratio, floor, cooldown) {
+  return { avg: 0.01, last: 0, ratio, floor, cooldown };
+}
+
+function detect(d, value, now) {
+  const hit = value > d.avg * d.ratio + d.floor && now - d.last > d.cooldown;
+  d.avg = lerp(d.avg, value, 0.08);
+  if (hit) d.last = now;
+  return hit;
+}
+
+const midDet = makeDetector(1.8, 0.004, 0.07);
+const trebleDet = makeDetector(1.8, 0.004, 0.07);
+
+function spawnDrops(strength) {
+  const px = peakX(...PITCH_RANGE);
+  const n = 2 + Math.floor(Math.min(1, strength * 6) * 5);
+  for (let i = 0; i < n; i++) drops.push(makeDrop(px));
+  if (drops.length > 150) drops.splice(0, drops.length - 150);
+}
+
+function igniteGlints() {
+  for (const g of glints) if (Math.random() < 0.35) g.flash = 1;
+}
+
 function draw() {
   const t = millis() / 1000;
   paintSky(t);
   image(sky, 0, 0, W, H);
 
-  // Calcula a intensidade do grave e eleva esse valor para dar mais contraste.
-  const bass = Math.pow(getBass(), 2.6);
+  readSpectrum();
+  const bass = Math.pow(getBand(...BANDS.bass), 2.6);
+  const mid = Math.pow(getBand(...BANDS.mid), 2.6);
+  const treble = Math.pow(getBand(...BANDS.treble), 2.6);
 
-  // Suaviza a transição para criar um efeito mais fluido.
   level = lerp(level, bass, 0.4);
 
-  // O círculo cresce conforme a energia do baixo aumenta.
+  if (detect(midDet, mid, t)) spawnDrops(mid);
+  if (detect(trebleDet, treble, t)) igniteGlints();
+
+  drawSparkle(Math.min(deltaTime, 50) / 1000);
   circle(width / 2, height / 2, 80 + level * 300);
 }
 
+function glow(x, y, r, a, rgb = '255, 255, 255') {
+  const c = drawingContext;
+  c.save();
+  const g = c.createRadialGradient(x, y, 0, x, y, r);
+  g.addColorStop(0, `rgba(${rgb}, ${a})`);
+  g.addColorStop(1, `rgba(${rgb}, 0)`);
+  c.fillStyle = g;
+  c.fillRect(x - r, y - r, r * 2, r * 2);
+  c.restore();
+}
+
+function drawGlints() {
+  for (const g of glints) {
+    g.flash *= 0.93;
+    if (g.flash < 0.03) continue;
+    glow(g.x, g.y, g.r * (1.2 + g.flash), g.flash * 0.8, STAR_RGB);
+    glow(g.x, g.y, g.r * 0.3, g.flash);
+  }
+}
+
+function drawSparkle(dt) {
+  const c = drawingContext;
+  c.save();
+  drawGlints();
+  drawDrops(dt);
+  c.restore();
+}
+
 function paintSky(t) {
-  sky.loadPixels();
-  for (let y = 0; y < sky.height; y++) {
-    const k = y / (sky.height - 1);
+  const px = skyImg.data;
+  for (let y = 0; y < skyImg.height; y++) {
+    const k = y / (skyImg.height - 1);
     const r0 = lerp(SKY_TOP[0], SKY_BOTTOM[0], k);
     const g0 = lerp(SKY_TOP[1], SKY_BOTTOM[1], k);
     const b0 = lerp(SKY_TOP[2], SKY_BOTTOM[2], k);
-    for (let x = 0; x < sky.width; x++) {
+    for (let x = 0; x < skyImg.width; x++) {
       const n = noise(x * 0.045, y * 0.03, t * 0.12);
       const cloud = constrain((n - 0.42) * 2.4, 0, 1);
-      const i = (y * sky.width + x) * 4;
-      sky.pixels[i]     = lerp(r0, 255, cloud);
-      sky.pixels[i + 1] = lerp(g0, 255, cloud);
-      sky.pixels[i + 2] = lerp(b0, 255, cloud);
-      sky.pixels[i + 3] = 255;
+      const i = (y * skyImg.width + x) * 4;
+      px[i]     = lerp(r0, 255, cloud);
+      px[i + 1] = lerp(g0, 255, cloud);
+      px[i + 2] = lerp(b0, 255, cloud);
+      px[i + 3] = 255;
     }
   }
-  sky.updatePixels();
+  sky.drawingContext.putImageData(skyImg, 0, 0);
 }
 
 // Retorna um valor entre 0 e 1 representando a energia do grave da música.
 // Esse valor é calculado a partir da faixa de frequências aproximada do baixo.
-function getBass() {
-  // Se não houver áudio ou analisador, evita erro e devolve 0.
+function readSpectrum() {
+  if (analyser && source) analyser.getByteFrequencyData(freqData);
+}
+
+function getBand(lowHz, highHz) {
   if (!analyser || !source) return 0;
-
-  // Pega os dados do espectro do áudio em tempo real.
-  analyser.getByteFrequencyData(freqData);
-
-  // Converte o índice de bins em Hertz para saber qual frequência estamos lendo.
   const binHz = audioCtx.sampleRate / analyser.fftSize;
-
-  // Define a faixa de frequências do grave: aproximadamente 40 Hz até 250 Hz.
-  const from = Math.max(1, Math.floor(40 / binHz));
-  const to = Math.ceil(250 / binHz);
-
+  const from = Math.max(1, Math.floor(lowHz / binHz));
+  const to = Math.min(freqData.length - 1, Math.ceil(highHz / binHz));
   let sum = 0;
   for (let i = from; i <= to; i++) sum += freqData[i];
-
-  // Divide pela quantidade de bandas e pela intensidade máxima para normalizar o resultado.
   return sum / ((to - from + 1) * 255);
+}
+
+function makeDrop(cx) {
+  return {
+    x: cx + (Math.random() - 0.5) * 90,
+    y: Math.random() * H * 0.45,
+    vy: 120 + Math.random() * 220,
+    size: 5 + Math.random() * 9,
+    life: 0,
+    maxLife: 1.4 + Math.random() * 1.2,
+  };
+}
+
+function peakX(lowHz, highHz) {
+  const binHz = audioCtx.sampleRate / analyser.fftSize;
+  const from = Math.max(1, Math.floor(lowHz / binHz));
+  const to = Math.min(freqData.length - 1, Math.ceil(highHz / binHz));
+  let best = from;
+  for (let i = from + 1; i <= to; i++) {
+    if (freqData[i] > freqData[best]) best = i;
+  }
+
+  if (freqData[best] < 30) return W / 2;
+  const k = Math.log((best * binHz) / lowHz) / Math.log(highHz / lowHz);
+  return map(constrain(k, 0, 1), 0, 1, W * (0.5 - PITCH_SPREAD / 2), W * (0.5 + PITCH_SPREAD / 2));
+}
+
+function drawDrops(dt) {
+  const c = drawingContext;
+  for (let i = drops.length - 1; i >= 0; i--) {
+    const d = drops[i];
+    d.life += dt;
+    d.y += d.vy * dt;
+    const k = d.life / d.maxLife;
+    if (k >= 1 || d.y > H) { drops.splice(i, 1); continue; }
+    const a = (1 - k) * Math.min(1, d.life * 12) * (0.75 + 0.25 * Math.sin(d.life * 30 + d.x));
+    const tail = d.vy * 0.22;
+    const g = c.createLinearGradient(d.x, d.y - tail, d.x, d.y);
+    g.addColorStop(0, `rgba(${DROP_RGB}, 0)`);
+    g.addColorStop(1, `rgba(${DROP_RGB}, ${a * 0.7})`);
+    c.strokeStyle = g;
+    c.lineWidth = d.size * 0.35;
+    c.lineCap = 'round';
+    c.beginPath();
+    c.moveTo(d.x, d.y - tail);
+    c.lineTo(d.x, d.y);
+    c.stroke();
+    glow(d.x, d.y, d.size * 4, a * 0.6, DROP_RGB);
+    glow(d.x, d.y, d.size * 1.2, a);
+  }
 }
