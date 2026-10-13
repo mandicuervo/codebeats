@@ -25,6 +25,6 @@ function sceneDraw(f) {
   if (f.midHit) spawnDrops(f.mid, f.pitch);
   if (f.trebleHit) igniteGlints();
 
+  drawSun(level);
   drawSparkle(f.dt);
-  circle(width / 2, height / 2, 80 + level * 300);
 }

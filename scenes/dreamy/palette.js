@@ -13,3 +13,6 @@ const PITCH_SPREAD = 0.6;
 // Cores dos brilhos, como texto "R, G, B" para entrar direto em rgba(...).
 const STAR_RGB = '255, 226, 150';
 const DROP_RGB = '255, 140, 210';
+
+const HORIZON_Y = H * 0.62;      // altura do horizonte (62% da tela, de cima para baixo)
+const SUN_RGB = '255, 190, 120'; // cor do brilho em volta do sol
