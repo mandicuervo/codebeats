@@ -1,6 +1,4 @@
-// =========================
 // MOTOR: gravação de vídeo
-// =========================
 // Grava o canvas e o som juntos num arquivo. Funciona com qualquer cena, porque
 // grava o que estiver desenhado no canvas.
 

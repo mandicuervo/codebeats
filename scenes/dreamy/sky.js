@@ -1,6 +1,4 @@
-// =========================
 // CENA dreamy: CÉU
-// =========================
 // O céu é calculado pixel a pixel, mas em tamanho pequeno (72x128) e depois
 // esticado sobre o canvas inteiro. Calcular 720x1280 pixels por frame seria
 // pesado demais para a CPU, e o esticamento já suaviza as nuvens.

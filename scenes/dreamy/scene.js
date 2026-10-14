@@ -1,10 +1,8 @@
-// =========================
-// CENA: dreamcore-sky
-// =========================
+// CENA: dreamy
 // Contrato com o motor: sceneSetup() roda uma vez e sceneDraw(f) roda a cada
 // frame. `f` traz o tempo e a análise do som (veja js/sketch.js).
 
-// Nível suavizado do grave, para o círculo crescer e encolher sem tremer.
+// Nível suavizado do grave. Alimenta o sol e a velocidade do chão, sem tremer.
 let level = 0;
 
 function sceneSetup() {
@@ -21,10 +19,22 @@ function sceneDraw(f) {
   // Grave: aproxima 40% do caminho do valor atual a cada frame.
   level = lerp(level, f.bass, 0.4);
 
-  // Pulsos: o médio cria gotas e o agudo acende as estrelas.
-  if (f.midHit) spawnDrops(f.mid, f.pitch);
-  if (f.trebleHit) igniteGlints();
+  // Pulsos do médio: criam gotas e dão um clarão fraco na porta.
+  if (f.midHit) {
+    spawnDrops(f.mid, f.pitch);
+    igniteDoor(0.5);
+  }
 
+  // Pulsos do agudo: intensificam o pulso da porta e podem ativar o glitch.
+  if (f.trebleHit) {
+    igniteDoor(1);
+    if (Math.random() < GLITCH_CHANCE) igniteGlitch(1);
+  }
+
+  // Camadas, de trás para frente: o que vem depois fica por cima.
   drawSun(level);
+  drawFloor(f.dt, level);
+  drawDoor(level);
   drawSparkle(f.dt);
+  applyGlitch();
 }

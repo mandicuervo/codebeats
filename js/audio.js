@@ -1,6 +1,4 @@
-// =========================
 // ÁUDIO: reprodução e análise
-// =========================
 // Este arquivo cuida de tudo que envolve som: carregar a música, tocar e parar,
 // e medir o espectro (quanta energia há em cada faixa de frequência).
 // Ele não sabe nada de desenho: quem usa os números é a cena.
@@ -98,6 +96,7 @@ function ensureAnalyser() {
 
   analyser = audioCtx.createAnalyser();
   analyser.fftSize = 1024;
+  analyser.smoothingTimeConstant = 0.4;   // menos suavização: ataques de nota ficam mais nítidos
   analyser.connect(audioCtx.destination);
   recDest = audioCtx.createMediaStreamDestination();
   analyser.connect(recDest);

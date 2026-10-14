@@ -1,40 +1,22 @@
-// =========================
-// CENA dreamy: GOTAS E ESTRELAS
-// =========================
-// Os dois efeitos nascem de pulsos do som: o médio cria gotas que caem, o agudo
-// acende estrelas fixas no céu.
+// CENA dreamy: GOTAS
+// As gotas nascem de pulsos do som médio.
 
 // Gotas ativas. Cada gota é um objeto com posição, velocidade e vida própria.
 const drops = [];
-
-// Estrelas fixas, em posições aleatórias do terço de cima da tela.
-// flash vai de 0 (apagada) a 1 (acesa) e decai sozinho.
-// Usa W e H, por isso config.js precisa ser carregado antes deste arquivo.
-const glints = Array.from({ length: 28 }, () => ({
-  flash: 0,
-  x: Math.random() * W,
-  y: Math.random() * H * 0.6,
-  r: 14 + Math.random() * 26, // raio base do brilho, em pixels
-}));
 
 // Cria um grupo de gotas. strength = energia do médio (mais forte, mais gotas).
 // pitch = altura da nota, de 0 a 1, convertida aqui em posição horizontal.
 function spawnDrops(strength, pitch) {
   const px = map(pitch, 0, 1, W * (0.5 - PITCH_SPREAD / 2), W * (0.5 + PITCH_SPREAD / 2));
-  const n = 2 + Math.floor(Math.min(1, strength * 6) * 5); // de 2 a 7 gotas
+  const n = 1 + Math.floor(Math.min(1, strength * 6) * 2); // de 1 a 3 gotas
   for (let i = 0; i < n; i++) drops.push(makeDrop(px));
 
   // Limite de segurança: descarta as mais antigas se houver gotas demais.
   if (drops.length > 150) drops.splice(0, drops.length - 150);
 }
 
-// Acende cerca de 35% das estrelas, escolhidas ao acaso.
-function igniteGlints() {
-  for (const g of glints) if (Math.random() < 0.35) g.flash = 1;
-}
-
 // Desenha um halo de luz: um círculo que vai da cor (centro) até transparente
-// (borda). r = raio, a = opacidade no centro, rgb = cor como texto "R, G, B".
+// (borda).
 // Usa save/restore para não deixar o fillStyle alterado para quem vem depois.
 function glow(x, y, r, a, rgb = '255, 255, 255') {
   const c = drawingContext;
@@ -47,24 +29,12 @@ function glow(x, y, r, a, rgb = '255, 255, 255') {
   c.restore();
 }
 
-// Desenha as estrelas acesas. O flash perde 7% por frame, então o clarão
-// dura cerca de meio segundo. Halo colorido grande e núcleo branco pequeno.
-function drawGlints() {
-  for (const g of glints) {
-    g.flash *= 0.93;
-    if (g.flash < 0.03) continue; // apagada: nada a desenhar
-    glow(g.x, g.y, g.r * (1.2 + g.flash), g.flash * 0.8, STAR_RGB);
-    glow(g.x, g.y, g.r * 0.3, g.flash);
-  }
-}
-
-// Desenha os dois efeitos. O save/restore é necessário porque drawDrops altera
+// Desenha as gotas. O save/restore é necessário porque drawDrops altera
 // strokeStyle, lineWidth e lineCap do contexto, e sem restaurar o círculo
 // desenhado depois pelo p5 sairia com esse contorno.
 function drawSparkle(dt) {
   const c = drawingContext;
   c.save();
-  drawGlints();
   drawDrops(dt);
   c.restore();
 }
@@ -75,7 +45,7 @@ function drawSparkle(dt) {
 //   maxLife tempo de vida, em segundos
 function makeDrop(cx) {
   return {
-    x: cx + (Math.random() - 0.5) * 90, // espalha 90 px em volta da coluna
+    x: lerp(Math.random() * W, cx, DROP_PITCH_WEIGHT), // mistura sorteio na tela toda com a posição da nota
     y: Math.random() * H * 0.45,
     vy: 120 + Math.random() * 220,
     size: 5 + Math.random() * 9,

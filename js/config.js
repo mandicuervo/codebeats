@@ -1,12 +1,9 @@
-// =========================
 // CONFIGURAÇÃO DO MOTOR
-// =========================
 // Valores que valem para qualquer cena. Ajustes visuais (cores, espalhamento
 // das gotas) ficam na pasta de cada cena, em palette.js.
 
-// Resolução do canvas em pixels. 720x1280 é a proporção 9:16 do TikTok.
-// O vídeo gravado terá exatamente estes pixels, por isso não usamos o tamanho
-// da tela aqui (o CSS só reduz a exibição, não altera estes valores).
+// Área lógica de desenho, na proporção 9:16. Com pixelDensity(1.5) em sketch.js,
+// o canvas gravado tem 1080x1920 pixels sem alterar as proporções da cena.
 const W = 720, H = 1280;
 
 // Faixas de frequência (em Hz) que o motor mede a cada frame:

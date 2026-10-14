@@ -1,11 +1,9 @@
-// =========================
 // MOTOR: orquestra o canvas e o som
-// =========================
 // Cria o canvas e, a cada frame, mede o som e entrega os números à cena.
 // Não sabe nada de céu, gotas ou cores: isso é responsabilidade de cada cena.
 
 function setup() {
-  pixelDensity(1);       // 1 pixel de canvas = 1 pixel do vídeo, em qualquer tela
+  pixelDensity(1.5);     // canvas gravado em 1080x1920, mantendo a área lógica 720x1280
   createCanvas(W, H);
   sceneSetup();          // a cena prepara o que precisa (definida em scenes/)
 }
@@ -25,6 +23,7 @@ function draw() {
   // Pulsos: true apenas no instante em que a energia sobe bruscamente.
   const midHit = detect(midDet, mid, t);
   const trebleHit = detect(trebleDet, treble, t);
+
 
   // Entrega à cena tudo o que o motor sabe sobre este frame.
   sceneDraw({
