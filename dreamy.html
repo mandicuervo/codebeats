@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>Dreamcore Visuals</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:,">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
+<script src="js/config.js" defer></script>
+<script src="js/audio.js" defer></script>
+<script src="js/detect.js" defer></script>
+<script src="js/sketch.js" defer></script>
+<script src="js/recorder.js" defer></script>
+<script src="scenes/dreamy/palette.js" defer></script>
+<script src="scenes/dreamy/sky.js" defer></script>
+<script src="scenes/dreamy/sparkle.js" defer></script>
+<script src="scenes/dreamy/scene.js" defer></script>
+<script src="scenes/dreamy/sun.js" defer></script>
+<script src="scenes/dreamy/floor.js" defer></script>
+<script src="scenes/dreamy/door.js" defer></script>
+<script src="scenes/dreamy/glitch.js" defer></script>
+</head>
+<body data-scene="dreamy">
+  <input id="audioFile" type="file" accept="audio/*">
+  <button id="btnPlay" disabled>Tocar</button>
+  <label>Começar em (s)
+  <input id="startAt" type="number" min="0" value="0">
+</label>
+<label>Duração
+  <select id="dur">
+    <option value="15">15 s</option>
+    <option value="30" selected>30 s</option>
+    <option value="60">60 s</option>
+    <option value="full">Até o fim da música</option>
+  </select>
+</label>
+<button id="btnRec">Gravar vídeo</button>
+<a id="dl" hidden>Baixar vídeo</a>
+<p id="recStatus"></p>
+</body>
+</html>

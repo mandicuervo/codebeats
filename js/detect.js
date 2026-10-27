@@ -16,8 +16,10 @@ function makeDetector(ratio, floor, cooldown) {
 // Chamada uma vez por frame com a energia atual (value) e o tempo (now).
 // Devolve true se este frame é um pulso.
 function detect(d, value, now) {
-  // Pulso = energia acima de (média x ratio + folga) e fora do período de espera.
-  const hit = value > d.avg * d.ratio + d.floor && now - d.last > d.cooldown;
+  // Registra o limite e o bloqueio para diagnóstico e usa os mesmos valores no pulso.
+  d.threshold = d.avg * d.ratio + d.floor;
+  d.cooldownRemaining = Math.max(0, d.cooldown - (now - d.last));
+  const hit = value > d.threshold && d.cooldownRemaining === 0;
 
   // A média anda devagar (8% por frame), então o limite acompanha o volume da
   // música sem precisar de calibração manual.
@@ -28,5 +30,6 @@ function detect(d, value, now) {
 }
 
 // Parâmetros: (ratio, floor, cooldown). Para ficar mais sensível, baixe o ratio.
+const bassDet = makeDetector(1.5, 0.006, 0.008);
 const midDet = makeDetector(1.4, 0.004, 0.07);
-const trebleDet = makeDetector(1.8, 0.004, 0.07);
+const trebleDet = makeDetector(1.55, 0.004, 0.1);

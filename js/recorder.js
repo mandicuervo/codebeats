@@ -96,7 +96,8 @@ function saveRecording() {
 
   const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
   dlLink.href = dlUrl;
-  dlLink.download = `dreamy-${stamp}.${ext}`;
+  const sceneName = document.body.dataset.scene || 'dreamy';
+  dlLink.download = `${sceneName}-${stamp}.${ext}`;
   dlLink.textContent = `Baixar vídeo (${ext.toUpperCase()}, ${(blob.size / 1048576).toFixed(1)} MB)`;
   dlLink.hidden = false;
 
