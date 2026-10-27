@@ -14,6 +14,8 @@ let recVideoStream = null;
 let recording = false;
 let dlUrl = null;
 
+const REC_FPS = 30;
+
 // Escolhe o melhor formato que o navegador sabe gravar. MP4 vem primeiro porque
 // é o que o TikTok aceita; WebM é o plano B.
 function pickMime() {
@@ -40,18 +42,23 @@ function startRecording() {
   ensureAnalyser(); // garante que recDest exista
   if (source) stopMusic(); // evita duas músicas ao mesmo tempo
 
-  // Fluxo de vídeo (canvas a até 30 quadros por segundo) + fluxo de áudio.
-  recVideoStream = drawingContext.canvas.captureStream(30);
-  const stream = new MediaStream([
-    ...recVideoStream.getVideoTracks(),
-    ...recDest.stream.getAudioTracks(),
-  ]);
+  try {
+    recVideoStream = drawingContext.canvas.captureStream(REC_FPS);
+    const stream = new MediaStream([
+      ...recVideoStream.getVideoTracks(),
+      ...recDest.stream.getAudioTracks(),
+    ]);
 
-  const mime = pickMime();
-  recorder = new MediaRecorder(stream, {
-    mimeType: mime || undefined,
-    videoBitsPerSecond: 8_000_000,
-  });
+    const mime = pickMime();
+    recorder = new MediaRecorder(stream, {
+      mimeType: mime || undefined,
+      videoBitsPerSecond: 8_000_000,
+    });
+  } catch (error) {
+    if (recVideoStream) recVideoStream.getTracks().forEach((track) => track.stop());
+    recStatus.textContent = `Não foi possível iniciar a gravação: ${error.message}`;
+    return;
+  }
   recChunks = [];
   recorder.ondataavailable = (e) => { if (e.data.size) recChunks.push(e.data); };
   recorder.onstop = saveRecording;

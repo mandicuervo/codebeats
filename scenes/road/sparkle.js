@@ -46,6 +46,7 @@ function createStars() {
       speed: random(0.45, 1.1),
       drift: random(2, 8) * (random() < 0.5 ? -1 : 1),
       alpha: random(0.55, 0.85),
+      pulse: 0,
     });
   }
 
@@ -120,7 +121,8 @@ function drawSparkle(dt, t, trebleHit = false) {
   for (const star of imageStars) {
     star.x = (star.x + star.drift * dt + W) % W;
     const twinkle = 0.78 + Math.sin(t * star.speed + star.phase) * 0.16;
-    const size = star.size * (0.94 + twinkle * 0.08);
+    star.pulse = trebleHit ? 1 : star.pulse * Math.exp(-dt * 8);
+    const size = star.size * (0.94 + twinkle * 0.08 + star.pulse * 0.4);
     c.globalAlpha = star.alpha * twinkle;
     c.drawImage(starImage.canvas, star.x - size / 2, star.y - size / 2, size, size);
   }

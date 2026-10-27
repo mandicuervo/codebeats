@@ -12,9 +12,9 @@ const W = 720, H = 1280;
 //   treble -> brilho dos ataques: pratos, chimbal, harmônicos agudos
 // Cada par é [limite inferior, limite superior] e é passado para getBand(...).
 const BANDS = {
-  bass:   [40, 250],
-  mid:    [250, 2500],
-  treble: [2500, 10000],
+  bass:   [20, 250],
+  mid:    [250, 4000],
+  treble: [4000, 20000],
 };
 
 // Faixa (em Hz) usada só para descobrir a altura da nota tocada. A cena

@@ -3,6 +3,9 @@
 
 let level = 0;
 let lastCometAt = -Infinity;
+let lastGlitchAt = -Infinity;
+const ROAD_GLITCH_INTERVAL_SECONDS = 10;
+const COMET_INTERVAL_SECONDS = 5;
 
 function preload() {
   preloadMoonImage();
@@ -25,15 +28,21 @@ function sceneDraw(f) {
 
   if (f.bassHit) {
     igniteMoon(0.9 + Math.min(f.bass * 2, 0.1));
-    igniteGlitch(0.45);
-    igniteRoadWarp(1);
-    if (f.t - lastCometAt >= 10) {
+    if (f.t - lastGlitchAt >= ROAD_GLITCH_INTERVAL_SECONDS) {
+      igniteGlitch(0.45);
+      igniteRoadWarp(1);
+      lastGlitchAt = f.t;
+    }
+    if (f.t - lastCometAt >= COMET_INTERVAL_SECONDS) {
       spawnComet();
       lastCometAt = f.t;
     }
   }
   if (f.trebleHit) {
     pulseLamps(1);
+  }
+  if (f.midHit) {
+    pulseDaisy(f.mid);
   }
 
   applyGlitch();
@@ -42,6 +51,7 @@ function sceneDraw(f) {
   drawRoadsideLights(f.dt, level);
   drawSparkle(f.dt, f.t, f.trebleHit);
   if (f.bassDebugEnabled) drawBassDebug(f);
+  applyGrain();
 }
 
 let lastBassHit = -Infinity;

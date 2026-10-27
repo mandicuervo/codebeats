@@ -5,12 +5,13 @@ const MOON_BASE_RADIUS = 178;
 const MOON_IMAGE_SIZE = 2.5;
 const DAISY_SIZE_MULTIPLIER = 1.5; // tamanho da margarida em relação à Lua
 const DAISY_OPACITY = 0.20;
-const DAISY_ROTATION_PERIOD = 60; // segundos por volta completa
+const DAISY_SPIN_DECAY = 1.8;
 let moonImage;
 let daisyImage;
 let moonFlash = 0;
 let moonY = H * 0.28;
 let daisyRotation = 0;
+let daisyAngularVelocity = 0;
 
 function preloadMoonImage() {
   moonImage = loadImage('assets/road/moon.png');
@@ -21,6 +22,10 @@ function igniteMoon(strength) {
   moonFlash = Math.max(moonFlash, strength);
 }
 
+function pulseDaisy(strength) {
+  daisyAngularVelocity = Math.max(daisyAngularVelocity, 1.5 + Math.min(strength, 1) * 2.5);
+}
+
 function drawMoon(dt) {
   const c = drawingContext;
   const x = W / 2;
@@ -29,7 +34,9 @@ function drawMoon(dt) {
   const imageSize = radius * MOON_IMAGE_SIZE;
   const restingY = HORIZON_Y - (MOON_BASE_RADIUS * MOON_IMAGE_SIZE) / 2 - MOON_HORIZON_GAP;
   moonY = Math.min(moonY + dt * MOON_DESCENT_SPEED, restingY);
-  daisyRotation = (daisyRotation + dt * TWO_PI / DAISY_ROTATION_PERIOD) % TWO_PI;
+  daisyRotation = (daisyRotation + daisyAngularVelocity * dt) % TWO_PI;
+  daisyAngularVelocity *= Math.exp(-dt * DAISY_SPIN_DECAY);
+  if (daisyAngularVelocity < 0.01) daisyAngularVelocity = 0;
   const y = moonY;
   moonFlash *= Math.exp(-dt * 3.2);
 

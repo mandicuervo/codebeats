@@ -1,13 +1,25 @@
 // MOTOR: orquestra o canvas e o som
-// Cria o canvas e, a cada frame, mede o som e entrega os números à cena.
+// Cria o canvas, mede o som independentemente do desenho e entrega os números à cena.
 // Não sabe nada de céu, gotas ou cores: isso é responsabilidade de cada cena.
 
 let bassDebugEnabled = false;
+let audioAnalysis = {
+  bass: 0,
+  mid: 0,
+  treble: 0,
+  bassHit: false,
+  midHit: false,
+  trebleHit: false,
+  pitch: 0.5,
+};
+let lastAnalysisTime = 0;
 
 function setup() {
   pixelDensity(1.5);     // canvas gravado em 1080x1920, mantendo a área lógica 720x1280
   createCanvas(W, H);
   sceneSetup();          // a cena prepara o que precisa (definida em scenes/)
+  lastAnalysisTime = millis() / 1000;
+  setInterval(updateAudioAnalysis, 1000 / 60);
 }
 
 window.addEventListener('keydown', (event) => {
@@ -18,21 +30,10 @@ window.addEventListener('keydown', (event) => {
 
 function draw() {
   const t = millis() / 1000;
-
-  // Espectro atual, medido uma única vez por frame.
-  readSpectrum();
-
-  // Energia de cada faixa, de 0 a 1. O expoente 2.6 acentua os picos e achata
-  // o nível médio: sem ele, em música alta o valor ficaria sempre alto.
-  const bass = Math.pow(getBand(...BANDS.bass), 2.6);
-  const mid = Math.pow(getBand(...BANDS.mid), 2.6);
-  const treble = Math.pow(getBand(...BANDS.treble), 2.6);
-
-  // Pulsos: true apenas no instante em que a energia sobe bruscamente.
-  const bassHit = detect(bassDet, bass, t);
-  const midHit = detect(midDet, mid, t);
-  const trebleHit = detect(trebleDet, treble, t);
-
+  const { bass, mid, treble, bassHit, midHit, trebleHit, pitch } = audioAnalysis;
+  audioAnalysis.bassHit = false;
+  audioAnalysis.midHit = false;
+  audioAnalysis.trebleHit = false;
 
   // Entrega à cena tudo o que o motor sabe sobre este frame.
   sceneDraw({
@@ -43,6 +44,31 @@ function draw() {
     bassThreshold: bassDet.threshold,
     bassCooldownRemaining: bassDet.cooldownRemaining,
     bassDebugEnabled,
-    pitch: midHit ? pitch01(...PITCH_RANGE) : 0.5, // altura da nota, de 0 a 1
+    pitch,
   });
+}
+
+function updateAudioAnalysis() {
+  const now = millis() / 1000;
+  const dt = Math.min(now - lastAnalysisTime, 0.1);
+  lastAnalysisTime = now;
+  if (dt <= 0) return;
+
+  readSpectrum();
+  const bass = Math.pow(getBand(...BANDS.bass), 2.6);
+  const mid = Math.pow(getBand(...BANDS.mid), 2.6);
+  const treble = Math.pow(getBand(...BANDS.treble), 2.6);
+
+  const bassHit = detect(bassDet, bass, now, dt);
+  const midHit = detect(midDet, mid, now, dt);
+  const trebleHit = detect(trebleDet, treble, now, dt);
+
+  audioAnalysis.bass = bass;
+  audioAnalysis.mid = mid;
+  audioAnalysis.treble = treble;
+  audioAnalysis.bassHit = audioAnalysis.bassHit || bassHit;
+  audioAnalysis.midHit = audioAnalysis.midHit || midHit;
+  audioAnalysis.trebleHit = audioAnalysis.trebleHit || trebleHit;
+  if (midHit) audioAnalysis.pitch = pitch01(...PITCH_RANGE);
+  if (!source) audioAnalysis.pitch = 0.5;
 }

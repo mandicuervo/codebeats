@@ -104,8 +104,8 @@ function ensureAnalyser() {
   freqData = new Uint8Array(analyser.frequencyBinCount);
 }
 
-// Atualiza freqData com o espectro atual. Chamada uma vez por frame, antes de
-// qualquer getBand ou pitch01. Sem música tocando, não faz nada.
+// Atualiza freqData com o espectro atual. Chamada pelo amostrador de áudio,
+// antes de qualquer getBand ou pitch01. Sem música tocando, não faz nada.
 function readSpectrum() {
   if (analyser && source) analyser.getByteFrequencyData(freqData);
 }
